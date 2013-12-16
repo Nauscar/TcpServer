@@ -3,6 +3,7 @@
 
 #include <QDebug>
 #include <QObject>
+#include <QDateTime>
 #include <QtNetwork/QTcpServer>
 #include <QtNetwork/QTcpSocket>
 #include <QtNetwork/QHostAddress>

@@ -52,7 +52,9 @@ void TcpServer::startConnection()
 
 void TcpServer::sendFortune()
 {
-    qDebug() << "New Connection." << endl;
+    QTextStream qOut(stdout);
+    QDateTime dateTime = QDateTime(QDate::currentDate(), QTime::currentTime());
+    qOut << "(" << dateTime.date().toString() << " " << dateTime.time().toString() << "): request received" << endl;
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
@@ -62,8 +64,7 @@ void TcpServer::sendFortune()
     out << (quint16)(block.size() - sizeof(quint16));
 
     QTcpSocket *clientConnection = tcpServer->nextPendingConnection();
-    connect(clientConnection, SIGNAL(disconnected()),
-            clientConnection, SLOT(deleteLater()));
+    connect(clientConnection, SIGNAL(disconnected()), clientConnection, SLOT(deleteLater()));
 
     clientConnection->write(block);
     clientConnection->disconnectFromHost();
