@@ -25,7 +25,7 @@ void TcpServer::setFortunes()
 
 void TcpServer::startConnection()
 {
-    if (!tcpServer->listen()) {
+    if (!tcpServer->listen(QHostAddress::Any, 27015)) {
         qCritical() << "Unable to start the server: " << tcpServer->errorString();
         //close();
         return;
