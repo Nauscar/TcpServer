@@ -26,9 +26,8 @@ private:
     QNetworkSession* networkSession;
 private:
     void startConnection(void);
-    void sendData(QByteArray reply);
+    void sendData(QTcpSocket* client, QByteArray reply);
 private slots:
-    void sessionOpened(void);
     void newClient(void);
     void readData(void);
 };

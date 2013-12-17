@@ -2,11 +2,6 @@
 
 TcpServer::TcpServer()
 {
-    QNetworkConfigurationManager manager;
-    networkSession = new QNetworkSession(manager.defaultConfiguration(), this);
-    connect(networkSession, SIGNAL(opened()), this, SLOT(sessionOpened()));
-    networkSession->open();
-
     tcpServer = new QTcpServer(this);
     startConnection();
 }
@@ -38,24 +33,10 @@ void TcpServer::startConnection()
     connect(tcpServer, SIGNAL(newConnection()), this, SLOT(newClient()));
 }
 
-void TcpServer::sendData(QByteArray reply)
+void TcpServer::sendData(QTcpSocket* myClient, QByteArray data)
 {
-    /*QTextStream qOut(stdout);
-    QDateTime dateTime = QDateTime(QDate::currentDate(), QTime::currentTime());
-    qOut << "(" << dateTime.date().toString() << " " << dateTime.time().toString() << "): request received" << endl;
-
-    QByteArray block;
-    QDataStream out(&block, QIODevice::WriteOnly);
-    out.setVersion(QDataStream::Qt_4_0);
-    out << (quint16)0;
-    out << fortunes.at(qrand() % fortunes.size());
-    out.device()->seek(0);
-    out << (quint16)(block.size() - sizeof(quint16));
-
-    QTcpSocket* clientConnection = tcpServer->nextPendingConnection();
-    connect(clientConnection, SIGNAL(disconnected()), clientConnection, SLOT(deleteLater()));
-    qDebug() << clientConnection->write(block);
-    clientConnection->disconnectFromHost();*/
+    qDebug() << QString(data);
+    myClient->write(data);
 }
 
 void TcpServer::newClient()
@@ -70,10 +51,5 @@ void TcpServer::readData()
 {
     QTcpSocket* myClient = qobject_cast<QTcpSocket*>(sender());
     QByteArray data = myClient->readAll();
-    qDebug() << QString(data);
-}
-
-void TcpServer::sessionOpened()
-{
-    //TODO: Add configuration settings here.
+    sendData(myClient, data);
 }
