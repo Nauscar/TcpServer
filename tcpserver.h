@@ -8,6 +8,8 @@
 #include <QtNetwork/QTcpSocket>
 #include <QtNetwork/QHostAddress>
 #include <QtNetwork/QNetworkInterface>
+#include <QtNetwork/QNetworkSession>
+#include <QtNetwork/QNetworkConfigurationManager>
 #include <QStringList>
 #include <QByteArray>
 #include <QDataStream>
@@ -21,12 +23,14 @@ public:
     virtual ~TcpServer();
 private:
     QTcpServer* tcpServer;
-    QStringList fortunes;
+    QNetworkSession* networkSession;
 private:
-    void setFortunes(void); //to be deleted.
     void startConnection(void);
+    void sendData(QByteArray reply);
 private slots:
-    void sendFortune(void);
+    void sessionOpened(void);
+    void newClient(void);
+    void readData(void);
 };
 
 #endif // TCPSERVER_H

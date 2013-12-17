@@ -2,8 +2,12 @@
 
 TcpServer::TcpServer()
 {
+    QNetworkConfigurationManager manager;
+    networkSession = new QNetworkSession(manager.defaultConfiguration(), this);
+    connect(networkSession, SIGNAL(opened()), this, SLOT(sessionOpened()));
+    networkSession->open();
+
     tcpServer = new QTcpServer(this);
-    setFortunes(); //to be deleted
     startConnection();
 }
 
@@ -12,49 +16,34 @@ TcpServer::~TcpServer()
     delete tcpServer;
 }
 
-void TcpServer::setFortunes()
-{
-    fortunes << tr("You've been leading a dog's life. Stay off the furniture.")
-             << tr("You've got to think about tomorrow.")
-             << tr("You will be surprised by a loud noise.")
-             << tr("You will feel hungry again in another hour.")
-             << tr("You might have mail.")
-             << tr("You cannot kill time without injuring eternity.")
-             << tr("Computers are not intelligent. They only think they are.");
-}
-
 void TcpServer::startConnection()
 {
     if (!tcpServer->listen(QHostAddress::Any, 27015)) {
         qCritical() << "Unable to start the server: " << tcpServer->errorString();
-        //close();
+        tcpServer->close();
         return;
     }
 
-    QString ipAddress;
+    QTextStream qOut(stdout);
+    qOut << "The server is running on IP(s): ";
+
     QList<QHostAddress> ipAddressesList = QNetworkInterface::allAddresses();
     for (int c = 0; c < ipAddressesList.length(); c++) {
-        if (ipAddressesList.at(c) != QHostAddress::LocalHost &&
-                ipAddressesList.at(c).toIPv4Address()) {
-            ipAddress = ipAddressesList.at(c).toString();
-            break;
+        if(ipAddressesList.at(c).toIPv4Address()){
+            qOut << ipAddressesList.at(c).toString() << " ";
         }
     }
 
-    if (ipAddress.isEmpty())
-        ipAddress = QHostAddress(QHostAddress::LocalHost).toString();
-
-    QTextStream qOut(stdout);
-    qOut << "The server is running on IP: " << ipAddress << " Port: " << tcpServer->serverPort() << endl;
-
-    connect(tcpServer, SIGNAL(newConnection()), this, SLOT(sendFortune()));
+    qOut << "Port: " << tcpServer->serverPort() << endl;
+    connect(tcpServer, SIGNAL(newConnection()), this, SLOT(newClient()));
 }
 
-void TcpServer::sendFortune()
+void TcpServer::sendData(QByteArray reply)
 {
-    QTextStream qOut(stdout);
+    /*QTextStream qOut(stdout);
     QDateTime dateTime = QDateTime(QDate::currentDate(), QTime::currentTime());
     qOut << "(" << dateTime.date().toString() << " " << dateTime.time().toString() << "): request received" << endl;
+
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
@@ -63,10 +52,28 @@ void TcpServer::sendFortune()
     out.device()->seek(0);
     out << (quint16)(block.size() - sizeof(quint16));
 
-    QTcpSocket *clientConnection = tcpServer->nextPendingConnection();
+    QTcpSocket* clientConnection = tcpServer->nextPendingConnection();
     connect(clientConnection, SIGNAL(disconnected()), clientConnection, SLOT(deleteLater()));
+    qDebug() << clientConnection->write(block);
+    clientConnection->disconnectFromHost();*/
+}
 
-    clientConnection->write(block);
-    clientConnection->disconnectFromHost();
-    //clientConnection->deleteLater();
+void TcpServer::newClient()
+{
+    QTcpSocket* tcpClient = tcpServer->nextPendingConnection();
+    qDebug() << "Client connected: " << tcpClient->localAddress().toString();
+    connect(tcpClient, SIGNAL(disconnected()), tcpClient, SLOT(deleteLater()));
+    connect(tcpClient, SIGNAL(readyRead()), this, SLOT(readData()));
+}
+
+void TcpServer::readData()
+{
+    QTcpSocket* myClient = qobject_cast<QTcpSocket*>(sender());
+    QByteArray data = myClient->readAll();
+    qDebug() << QString(data);
+}
+
+void TcpServer::sessionOpened()
+{
+    //TODO: Add configuration settings here.
 }
